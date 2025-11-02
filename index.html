@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconhecimento de Gestos - Teachable Machine</title>
+    
+    <style>
+        body {
+            text-align: center;
+            font-family: Arial, sans-serif;
+            transition: background 0.3s ease;
+            font-size: 24px;
+            margin-top: 50px;
+        }
+        #emoji {
+            font-size: 80px;
+            margin-top: 20px;
+        }
+        #webcam-container {
+            display: inline-block;
+            margin-top: 20px;
+            /* Estilo para a borda da câmera, opcional */
+            border: 2px solid #ccc;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Mostre um gesto com a mão para a câmera ✋✌️👍</h2>
+    <p>Certifique-se de que a câmera está permitida e tente recarregar a página se não aparecer.</p>
+    
+    <div id="webcam-container"></div>
+    
+    <div id="emoji">Aguardando gesto...</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest"></script>
+
+    <script>
+        // **URL DO SEU MODELO PUBLICADO**
+        // Mantenha esta URL do Teachable Machine.
+        const URL = "https://teachablemachine.withgoogle.com/models/VJz72AuvC/";
+
+        let model, webcam, maxPredictions;
+
+        async function init() {
+            // Constrói as URLs completas para os arquivos do modelo
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            try {
+                // Carrega o modelo (Ponto onde estava dando erro antes de usar o servidor)
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                // Configura a webcam (Largura 300px, Altura 300px, Flip horizontal)
+                webcam = new tmImage.Webcam(300, 300, true);
+                await webcam.setup(); // Pede permissão da câmera
+                await webcam.play();
+
+                // Adiciona o canvas da webcam ao container
+                document.getElementById("webcam-container").appendChild(webcam.canvas);
+
+                // Inicia o loop de previsão
+                window.requestAnimationFrame(loop);
+            } catch (error) {
+                console.error("Erro ao inicializar o modelo ou a webcam:", error);
+                document.getElementById("emoji").textContent = "❌ Erro ao Carregar (Verifique o Console e o Servidor)";
+            }
+        }
+
+        async function loop() {
+            webcam.update(); // Atualiza a imagem da webcam
+            await predict(); // Faz a previsão
+            window.requestAnimationFrame(loop); // Chama o loop novamente
+        }
+
+        async function predict() {
+            // Faz a previsão com a imagem atual do canvas da webcam
+            const predictions = await model.predict(webcam.canvas);
+            
+            // Encontra a classe com a maior probabilidade (a melhor previsão)
+            const highest = predictions.reduce((a, b) => a.probability > b.probability ? a : b);
+            
+            // Mapeia o nome da classe para um Emoji
+            const emojiMap = {
+                "Joinha": "👍",
+                "Paz": "✌️",
+                "Mao aberta": "✋",
+                // Adicione outras classes aqui se tiver
+            };
+            
+            // Atualiza o elemento #emoji com o emoji correspondente ou um emoji de 'dúvida'
+            document.getElementById("emoji").textContent = emojiMap[highest.className] || "🤔";
+        }
+
+        // 5. Inicializa a Aplicação
+        init();
+    </script>
+
+</body>
+</html>
