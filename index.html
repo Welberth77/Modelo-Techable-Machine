@@ -29,20 +29,21 @@
 <body>
 
     <h2>Mostre um gesto com a mão para a câmera ✋✌️👍</h2>
-    <p>Certifique-se de que a câmera está permitida e tente recarregar a página se não aparecer.</p>
+    <p>Certifique-se de permitir o uso da câmera quando o navegador solicitar.</p>
 
     <div id="webcam-container"></div>
 
     <div id="emoji">Aguardando gesto...</div>
 
-
-    <!-- ✅ Scripts corretos -->
+    <!-- ✅ ORDEM CORRETA DOS SCRIPTS -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest"></script>
+    <!-- versão fixa do teachable machine (evita o bug do exports not defined) -->
+    <script>
+        window.tmImage = window.tmImage || {};
+    </script>
     <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8/dist/teachablemachine-image.min.js"></script>
 
-
     <script>
-        // ✅ URL DO MODELO (com / no final)
         const URL = "https://teachablemachine.withgoogle.com/models/VJz72AuvC/";
 
         let model, webcam, maxPredictions;
@@ -52,7 +53,6 @@
             const metadataURL = URL + "metadata.json";
 
             try {
-                // ✅ Agora tmImage funciona
                 model = await tmImage.load(modelURL, metadataURL);
                 maxPredictions = model.getTotalClasses();
 
@@ -65,8 +65,9 @@
                 window.requestAnimationFrame(loop);
 
             } catch (error) {
-                console.error("Erro ao inicializar o modelo ou a webcam:", error);
-                document.getElementById("emoji").textContent = "❌ Erro ao Carregar (Verifique o Console)";
+                console.error("Erro:", error);
+                document.getElementById("emoji").textContent =
+                    "❌ Erro ao carregar modelo ou câmera (veja o console)";
             }
         }
 
@@ -89,7 +90,8 @@
                 "Mao aberta": "✋",
             };
 
-            document.getElementById("emoji").textContent = emojiMap[highest.className] || "🤔";
+            document.getElementById("emoji").textContent =
+                emojiMap[highest.className] || "🤔";
         }
 
         init();
